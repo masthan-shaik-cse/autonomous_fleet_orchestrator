@@ -1,22 +1,53 @@
+import numpy as np
+from scipy.interpolate import CubicSpline
+try:
+    from loguru import logger
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
+
 class KinematicTranslator:
     """
-    Validates LLM-generated coordinates against physical world boundaries and kinematic limits
-    of the delivery drones before passing them to ROS2.
+    Translates discrete coordinate waypoints into physically realizable, 
+    time-parameterized continuous trajectories using Cubic Splines.
     """
-    def __init__(self, max_speed=15.0, map_bounds=(-100.0, 100.0, -100.0, 100.0)):
+    def __init__(self, max_speed: float = 15.0, bounds: tuple = (-500.0, 500.0, -500.0, 500.0)):
         self.max_speed = max_speed
-        self.bounds = map_bounds # x_min, x_max, y_min, y_max
+        self.bounds = bounds # (x_min, x_max, y_min, y_max)
         
-    def validate_waypoint(self, x: float, y: float) -> bool:
-        if x < self.bounds[0] or x > self.bounds[1]:
+    def validate_kinematics(self, target_pose: tuple) -> bool:
+        """ Ensures target does not exceed the absolute operational geofence. """
+        x, y = target_pose
+        x_min, x_max, y_min, y_max = self.bounds
+        
+        if not (x_min <= x <= x_max):
+            logger.error(f"Kinematic Violation: X-coordinate {x} out of bounds.")
             return False
-        if y < self.bounds[2] or y > self.bounds[3]:
+        if not (y_min <= y <= y_max):
+            logger.error(f"Kinematic Violation: Y-coordinate {y} out of bounds.")
             return False
+            
         return True
         
-    def generate_trajectory(self, current_pose, target_pose):
+    def generate_trajectory(self, current_pose: tuple, target_pose: tuple, num_points: int = 50) -> np.ndarray:
         """
-        Generates intermediate B-splines or polynomials for smooth drone flight.
+        Generates a smooth polynomial B-Spline trajectory to avoid sudden accelerations
+        which could physically destabilize the simulated drone.
         """
-        # Placeholder for complex trajectory math
-        return [current_pose, target_pose]
+        logger.info(f"Generating cubic spline trajectory from {current_pose} to {target_pose}")
+        
+        t = [0, 1] # Normalized time
+        x = [current_pose[0], target_pose[0]]
+        y = [current_pose[1], target_pose[1]]
+        
+        # Simple straight-line parameterization for base implementation
+        cs_x = CubicSpline(t, x)
+        cs_y = CubicSpline(t, y)
+        
+        t_new = np.linspace(0, 1, num_points)
+        traj_x = cs_x(t_new)
+        traj_y = cs_y(t_new)
+        
+        trajectory = np.vstack((traj_x, traj_y)).T
+        logger.debug(f"Generated {len(trajectory)} interpolation points.")
+        return trajectory

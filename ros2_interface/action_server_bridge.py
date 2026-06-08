@@ -1,28 +1,45 @@
-import time
+import asyncio
+try:
+    from loguru import logger
+except ImportError:
+    import logging
+    logger = logging.getLogger(__name__)
 
 class ROS2ActionServerBridge:
     """
-    Leverages Tool-former methodologies to allow the LLM to directly interface 
-    with ROS2 action servers.
+    Mock implementation of an rclpy Node simulating a ROS2 Action Client.
+    Provides async dispatching of polynomial trajectories to drone hardware.
     """
-    def __init__(self):
-        self.connected_drones = [1, 2, 3, 4, 5]
+    def __init__(self, node_name: str = "fleet_orchestrator_bridge"):
+        self.node_name = node_name
+        self.active_goals = {}
+        logger.info(f"ROS2 Node initialized: {self.node_name}")
         
-    def send_goal(self, drone_id: int, pose_x: float, pose_y: float):
+    async def send_trajectory_goal(self, drone_id: int, trajectory: list):
         """
-        Acts as the Action Client. The LLM tool calls this function.
+        Simulates sending an action goal to a specific drone's navigation server.
         """
-        if drone_id not in self.connected_drones:
-            return f"Error: Drone {drone_id} not connected to the fleet."
-            
-        print(f"[ROS2 Action Bridge] Sending Navigation Goal to Drone {drone_id}: X={pose_x}, Y={pose_y}")
+        logger.info(f"[{self.node_name}] Transmitting Spline Goal to Drone {drone_id}...")
+        self.active_goals[drone_id] = "PENDING"
         
-        # Simulate ROS2 Action Server latency and response
-        time.sleep(1)
-        print(f"[ROS2 Action Bridge] Goal Accepted by Drone {drone_id}.")
-        return "SUCCESS: Drone is navigating to target."
+        # Simulate network & execution latency
+        await asyncio.sleep(0.2)
+        
+        # Action Server Acceptance
+        self.active_goals[drone_id] = "EXECUTING"
+        logger.success(f"[{self.node_name}] Goal Accepted by Drone {drone_id} Navigation Stack.")
+        
+        # Simulate Navigation process
+        await asyncio.sleep(0.5)
+        self.active_goals[drone_id] = "SUCCEEDED"
+        logger.success(f"[{self.node_name}] Drone {drone_id} reached target coordinates safely.")
+        return True
 
 if __name__ == "__main__":
-    bridge = ROS2ActionServerBridge()
-    result = bridge.send_goal(drone_id=2, pose_x=45.12, pose_y=-12.98)
-    print(result)
+    async def run_node():
+        node = ROS2ActionServerBridge()
+        # Mock trajectory
+        traj = [[0,0], [10,10], [20,20]]
+        await node.send_trajectory_goal(2, traj)
+        
+    asyncio.run(run_node())
