@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . /app
 
 # Set Python path to ensure module resolution
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app/src
 
 # Command to run the orchestrator
-CMD ["python", "-m", "agent.fleet_commander"]
+CMD ["python", "-m", "autonomous_fleet_orchestrator.agent.fleet_commander"]

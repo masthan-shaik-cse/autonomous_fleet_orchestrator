@@ -6,13 +6,13 @@ services:
     volumes:
       - .:/app
     environment:
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app/src
       - LOG_LEVEL=DEBUG
-    command: python -m agent.fleet_commander
+    command: python -m autonomous_fleet_orchestrator.agent.fleet_commander
 
   mock_ros2_node:
     build: .
-    command: python -m ros2_interface.action_server_bridge
+    command: python -m autonomous_fleet_orchestrator.ros2_interface.action_server_bridge
     environment:
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app/src
       - NODE_NAME=mock_ros2_bridge

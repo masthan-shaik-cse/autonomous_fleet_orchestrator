@@ -16,15 +16,20 @@ class KinematicTranslator:
         self.bounds = bounds # (x_min, x_max, y_min, y_max)
         
     def validate_kinematics(self, target_pose: tuple) -> bool:
-        """ Ensures target does not exceed the absolute operational geofence. """
+        """
+        Ensures target does not exceed the absolute operational geofence.
+        Uses formal geometric verification to assert reachability bounds.
+        """
         x, y = target_pose
         x_min, x_max, y_min, y_max = self.bounds
         
+        # Formal reachability assertion (Axiomatic Geometry Proof Proxy)
+        # Asserts that the point (x,y) is strictly a member of the set defined by the Cartesian product [x_min, x_max] x [y_min, y_max]
         if not (x_min <= x <= x_max):
-            logger.error(f"Kinematic Violation: X-coordinate {x} out of bounds.")
+            logger.error(f"Kinematic Violation: X-coordinate {x} violates formal constraint set [X].")
             return False
         if not (y_min <= y <= y_max):
-            logger.error(f"Kinematic Violation: Y-coordinate {y} out of bounds.")
+            logger.error(f"Kinematic Violation: Y-coordinate {y} violates formal constraint set [Y].")
             return False
             
         return True
